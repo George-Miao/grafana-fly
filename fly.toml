@@ -1,40 +1,43 @@
 app = "grafana-miao-dev"
-
-[env]
-GF_INSTALL_PLUGINS = "grafana-worldmap-panel,grafana-clock-panel"
-GF_SERVER_DOMAIN   = "grafana.miao.dev"
-GF_SERVER_PROTOCAL = "https"
-GF_SERVER_ROOT_URL = "https://grafana.miao.dev/"
+primary_region = "ewr"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
 
 [build]
-image = "grafana/grafana"
+  image = "grafana/grafana"
 
-[mount]
-source      = "grafana"
-destination = "/var/lib/grafana"
+[env]
+  GF_INSTALL_PLUGINS = "grafana-worldmap-panel,grafana-clock-panel"
+  GF_SERVER_DOMAIN = "grafana.miao.dev"
+  GF_SERVER_PROTOCAL = "https"
+  GF_SERVER_ROOT_URL = "https://grafana.miao.dev/"
+
+[[mounts]]
+  source = "grafana_machines"
+  destination = "/var/lib/grafana"
+  processes = ["app"]
 
 [[services]]
-internal_port = 3000
-protocol      = "tcp"
+  protocol = "tcp"
+  internal_port = 3000
 
-[services.concurrency]
-hard_limit = 100
-soft_limit = 80
-type       = "connections"
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
 
-[[services.ports]]
-handlers = ["tls", "http"]
-port     = 443
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
 
-[[services.ports]]
-handlers = ["http"]
-port     = 80
-
-[[services.http_checks]]
-path            = "/api/health"
-method          = "get"
-timeout         = "2000"
-interval        = "10000"
-protocol        = "http"
-grace_period    = "5s"
-tls_skip_verify = false
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    restart_limit = 0
+    method = "get"
+    path = "/api/health"
+    protocol = "http"
